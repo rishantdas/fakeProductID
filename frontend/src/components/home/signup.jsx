@@ -1,0 +1,203 @@
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import bgImg from "../../img/bg.png";
+import axios from '../../api/axios';
+import useAuth from '../../hooks/useAuth';
+import { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+
+export default function SignUp() {
+    const { setAuth } = useAuth();
+    const navigate = useNavigate();
+
+    const errRef = useRef();
+
+    const [user, setUser] = useState('');
+    const [pwd, setPwd] = useState('');
+    const [confirmpwd, setconfirmPwd] = useState('');
+    const [fullname, setFullname] = useState('');
+    const [errMsg, setErrMsg] = useState('');
+
+    const handleBack = () => {
+        navigate('/');
+    }
+
+    useEffect(() => {
+        setErrMsg('');
+    }, [user, pwd]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const model = {
+            'username': user,
+            'password': pwd,
+            'fullname': fullname,
+            'confirmPassword': confirmpwd
+        };
+
+        try {
+
+            const res = await axios.post(
+                `http://localhost:5000/api/auth/signup`,
+                model,
+                {
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+
+            console.log(res.data)
+
+            if (!res?.data) {
+                setErrMsg('Singup Failed. Please try again later.');
+                // errRef.current.focus();
+            } else {
+                const { role } = res.data;
+                setAuth({ user, pwd, role })
+                setUser('');
+                setPwd('');
+                navigate("/login", { replace: true });
+
+            }
+        } catch (err) {
+            console.log(err);
+            if (!err?.response) {
+                console.log(err);
+                setErrMsg('Server is down. Please try again later.');
+            } else if (err.response?.status === 400) {
+                setErrMsg('Invalid username or password.');
+            } else if (err.response?.status === 401) {
+                setErrMsg('Unauthorized access.');
+            } else {
+                setErrMsg('Login Failed. Please try again later.');
+            }
+            errRef.current.focus();
+        }
+    };
+
+    return (
+        <Box sx={{
+            backgroundImage: `url(${bgImg})`,
+            minHeight: "80vh",
+            backgroundRepeat: "no-repeat",
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            zIndex: -2,
+        }}>
+
+            <Container component="main" maxWidth="sm">
+                <Box
+                    sx={{
+                        boxShadow: 3,
+                        borderRadius: 2,
+                        px: 4,
+                        py: 6,
+                        marginTop: 8,
+                        backgroundColor: '#e3eefc',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        align: "center",
+
+                    }}
+                >
+                    <Typography component="h1" variant="h5"
+                        sx={{
+                            textAlign: "center", marginBottom: "3%", marginTop: "3%",
+                            fontFamily: 'Gambetta', fontWeight: "bold", fontSize: "2.5rem"
+                        }}
+                    >
+                        IDENTEEFI
+                    </Typography>
+                    <Typography component="h1" variant="h5">
+                        SignUp
+                    </Typography>
+                    {errMsg && <Typography component="h1" variant="body2" color="error" ref={errRef} sx={{ marginTop: "2rem" }}>  {errMsg} </Typography>}
+                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }} >
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="username"
+                            label="Username"
+                            name="username"
+                            autoFocus
+                            onChange={(e) => setUser(e.target.value)}
+
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="fullname"
+                            label="Fullname"
+                            name="Fullname"
+                            autoFocus
+                            onChange={(e) => setFullname(e.target.value)}
+
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            name="password"
+                            label="Password"
+                            type="password"
+                            id="password"
+                            onChange={(e) => setPwd(e.target.value)}
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            name="confirmpwd"
+                            label="confirmpwd"
+                            type="password"
+                            id="confirmpwd"
+                            onChange={(e) => setconfirmPwd(e.target.value)}
+                        />
+                        <FormControlLabel
+                            control={<Checkbox value="remember" color="primary" />}
+                            label="Remember me"
+                        />
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2 }}
+                        >
+                            SignUp
+                        </Button>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                display: "flex",
+                                justifyContent: "center",
+                            }}
+                        >
+
+
+                            <Button
+                                onClick={handleBack}
+
+                            >
+                                Back
+                            </Button>
+
+                        </Box>
+                    </Box>
+                </Box>
+            </Container>
+        </Box>
+    );
+}
